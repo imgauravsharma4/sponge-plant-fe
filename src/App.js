@@ -1,13 +1,21 @@
-import './App.css';
-// import RegistrationForm from './Component/AntdForm';
-import BootstrapForm from './Component/BootstrapForm';
+import "./App.css";
+import AppHeader from "./Component/AppHeader";
+import SideMenu from "./Component/SideMenu";
+import {  BrowserRouter } from "react-router-dom";
+
+import PageContent from "./Component/PageContent";
 
 function App() {
   return (
-    <div className="App">
-     {/* <RegistrationForm/> */}
-<BootstrapForm/>
-    </div>
+    <BrowserRouter>
+      <div className="App">
+        <AppHeader />
+        <div className="SideMenuAndPageContent">
+          <SideMenu />
+          <PageContent />
+        </div>
+      </div>
+    </BrowserRouter>
   );
 }
 
