@@ -213,8 +213,8 @@ const Machine = () => {
                     ? " On Hold"
                     : kiln.working_status === WORKING_STATUS.STARTED
                     ? "Running"
-                    : "Shutdown"}
-                </h3>{" "}
+                    : "Shut Down"}
+                </h3>
                 <div>Capacity: {kiln.capacity} (Ton/h)</div>
                 Last updated: {new Date(kiln.updatedAt).toLocaleString()}
               </div>
