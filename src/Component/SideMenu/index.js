@@ -28,12 +28,12 @@ import {
           selectedKeys={[selectedKeys]}
           items={[
             {
-              label: "Material Add",
+              label: "Material ",
               icon: <AppstoreOutlined />,
               key: "/",
             },
             {
-              label: "Add Machine",
+              label: "Machine",
               key: "/machine",
               icon: <ShopOutlined />,
             },
