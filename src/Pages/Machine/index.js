@@ -202,18 +202,19 @@ const Machine = () => {
               <div className="card">
                 <LineChartOutlined className="text-lg" />
                 <h3>{kiln.name}</h3>
-                <h3 >
-                  {kiln.working_status === WORKING_STATUS.NOT_STARTED
-                    ? "Not Started"
-                    : kiln.working_status === WORKING_STATUS.HOLD
-                    ? "Hold"
-                    : kiln.working_status === WORKING_STATUS.STARTED
-                    ? "Started"
-                    : "Shutdown"}
-                </h3>{" "}
+            
               </div>
 
               <div className="mb-4">
+              <h3 >
+                  {kiln.working_status === WORKING_STATUS.NOT_STARTED
+                    ? "Not Started"
+                    : kiln.working_status === WORKING_STATUS.HOLD
+                    ? " On Hold"
+                    : kiln.working_status === WORKING_STATUS.STARTED
+                    ? "Running"
+                    : "Shutdown"}
+                </h3>{" "}
                 <div>Capacity: {kiln.capacity} (Ton/h)</div>
                 Last updated: {new Date(kiln.updatedAt).toLocaleString()}
               </div>
