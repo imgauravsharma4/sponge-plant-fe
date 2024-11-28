@@ -1,7 +1,6 @@
 .App{
   display: flex;
   flex-direction: column;
-  width: 100vw;
   height: 100vh;
 }
 .AppHeader{
@@ -36,8 +35,7 @@ border-top: 1px solid rgba(0, 0, 0, 0.15);
 }
 .PageContent{
   padding-left: 12px;
-  width: 60%;
-
+  width: calc(100% - 230px);
 }
 
 .card{
