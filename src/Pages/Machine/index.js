@@ -21,27 +21,29 @@ import {
   PauseCircleOutlined,
   CloseCircleOutlined,
   PlusOutlined,
-  // WarningOutlined,
   LineChartOutlined,
   EditOutlined,
   DeleteOutlined,
 } from "@ant-design/icons";
 import API_ENDPOINTS from "../../Config/config";
 import axios from "axios";
+import { FaEye } from "react-icons/fa";
 
 const { Title } = Typography;
 const { Option } = Select;
 
 const Machine = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMachineModalOpen, SetIsMachineModalOpen] = useState(false);
   const [editingKiln, setEditingKiln] = useState(null);
   const [kilns, setKilns] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [currentKilnId, setCurrentKilnId] = useState(null);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
-  const [isAddMaterialModalOpen, setIsAddMaterialModalOpen] = useState(false); 
-  const [selectedQuantity,setSelectedQuantity]=useState()
-
+  const [isAddMaterialModalOpen, setIsAddMaterialModalOpen] = useState(false);
+  const [selectedQuantity, setSelectedQuantity] = useState();
+  const [selectedMachineIndex,setSelectedMachineIndex]=useState(null)
+  const [reload,setReload]=useState(false)
   const [form] = Form.useForm();
 
   const WORKING_STATUS = {
@@ -61,25 +63,16 @@ const Machine = () => {
   };
 
 
-  useEffect(() => {
-    fetchKilns();
-  }, []);
-
-
-
-
   const handleAddKiln = async (values) => {
     try {
       const payload = {
         name: values.name,
         capacity: values.capacity,
       };
-
       await axios.post(API_ENDPOINTS.MACHINE, payload);
       message.success("Kiln added successfully!");
-
       fetchKilns();
-      setIsModalOpen(false);
+      SetIsMachineModalOpen(false);
       form.resetFields();
     } catch (error) {
       console.error("Failed to add kiln:", error);
@@ -116,7 +109,6 @@ const Machine = () => {
         id: kiln._id,
         status: "inactive",
       };
-
       await axios.post(API_ENDPOINTS.MACHINE, payload);
       message.success("Kiln deleted successfully!");
       await fetchKilns();
@@ -128,7 +120,6 @@ const Machine = () => {
   const fetchMaterials = async () => {
     try {
       const response = await axios.get(API_ENDPOINTS.MATERIAL);
-      console.log("OOO", response)
       setMaterials(response.data.result);
     } catch (error) {
       console.error("Failed to fetch materials:", error);
@@ -136,24 +127,20 @@ const Machine = () => {
     }
   };
   const handleStatusUpdate = async (kilnId, status) => {
+
     try {
+      setCurrentKilnId(kilnId);
       const payload = {
         id: kilnId,
         working_status: status,
       };
       await axios.post(API_ENDPOINTS.MACHINE, payload);
-      const kilnIndex = kilns.findIndex((kiln) => kiln.id === kilnId);
-      const updatedKilns = [...kilns];
-      updatedKilns[kilnIndex].working_status = status;  
-      setKilns(updatedKilns);
-  
-      message.success(`Kiln status updated to ${status} successfully!`);
-  
       if (status === WORKING_STATUS.STARTED) {
-        setCurrentKilnId(kilnId);
-        fetchMaterials();
+        fetchKilns();
         setIsModalOpen(true);
       }
+      message.success(`Kiln status updated to ${status} successfully!`);
+
     } catch (error) {
       console.error("Failed to update kiln status:", error);
       message.error("Failed to update kiln status");
@@ -161,7 +148,7 @@ const Machine = () => {
   };
   const showEditModal = (kiln) => {
     setEditingKiln(kiln);
-    setIsModalOpen(true);
+    SetIsMachineModalOpen(true);
     form.setFieldsValue({
       name: kiln.name,
       capacity: kiln.capacity,
@@ -180,31 +167,36 @@ const Machine = () => {
     }
   };
 
-
-
-
   const handleSaveMaterial = async () => {
     try {
-      if (!selectedMaterial || !selectedQuantity) {
+      if (!selectedMaterial || !selectedQuantity || !currentKilnId) {
         message.warning("Please select a material and enter the quantity.");
         return;
       }
       const payload = {
-        material_id: selectedMaterial, 
-        kiln_id: currentKilnId,       
-        quantity: selectedQuantity,   
+        material_id: selectedMaterial,
+        kiln_id: currentKilnId,
+        quantity: selectedQuantity,
       };
-      await axios.post(`${API_ENDPOINTS.MACHINE}/kiln-material`, payload);
+    const result = await axios.post(`${API_ENDPOINTS.MACHINE_MATERIAL_ADD}`, payload);
+    if(result){
+      setReload(!reload)
+    }
       message.success("Material added successfully!");
-      setIsAddMaterialModalOpen(false); 
-      fetchMaterials(); 
+      setIsAddMaterialModalOpen(false);
+      fetchMaterials();
     } catch (error) {
       console.error("Failed to add material:", error);
       message.error("Failed to add material");
     }
   };
+
   
-  
+  useEffect(() => {
+    fetchKilns();
+  }, [reload]);
+
+
   return (
     <div className="p-6 relative">
       <div style={{ marginBottom: "50px" }}>
@@ -216,7 +208,7 @@ const Machine = () => {
           icon={<PlusOutlined />}
           onClick={() => {
             setEditingKiln(null);
-            setIsModalOpen(true);
+            SetIsMachineModalOpen(true);
             form.resetFields();
           }}
         >
@@ -225,7 +217,7 @@ const Machine = () => {
       </div>
 
       <Row gutter={[16, 16]}>
-        {kilns.map((kiln) => (
+        {kilns.map((kiln, index) => (
           <Col xs={24} lg={12} key={kiln.id}>
             <Card
               style={getCardStyle(kiln.working_status)}
@@ -233,7 +225,8 @@ const Machine = () => {
                 <Row justify="space-between" align="middle" className="w-full">
                   <Col>
                     <Space>
-                      <Button
+                    <FaEye onClick={()=> {setIsModalOpen(true); setSelectedMachineIndex(index);setCurrentKilnId(kiln._id);}}  className="mouse-pointer"/>                     
+                       <Button
                         type="text"
                         icon={<EditOutlined />}
                         onClick={() => showEditModal(kiln)}
@@ -255,11 +248,10 @@ const Machine = () => {
               <div className="card">
                 <LineChartOutlined className="text-lg" />
                 <h3>{kiln.name}</h3>
-            
               </div>
 
               <div className="mb-4">
-              <h3 >
+                <h3>
                   {kiln.working_status === WORKING_STATUS.NOT_STARTED
                     ? "Not Started"
                     : kiln.working_status === WORKING_STATUS.HOLD
@@ -271,46 +263,56 @@ const Machine = () => {
                 <div>Capacity: {kiln.capacity} (Ton/h)</div>
                 Last updated: {new Date(kiln.updatedAt).toLocaleString()}
               </div>
-
               <div className="mb-4">
                 <Title level={5} className="mb-3">
                   Status Control
                 </Title>
                 <Row gutter={16}>
-                  <Col>
-                    <Button
-                      className="running"
-                      type="primary"
-                      onClick={() =>
-                          handleStatusUpdate(kiln.id, WORKING_STATUS.STARTED)
-                      }
-                      icon={<PlayCircleOutlined />}
-                    >
-                      Start
-                    </Button>
-                  </Col>
-                  <Col>
-                    <Button
-                      className="hold"
-                      onClick={() =>
-                        handleStatusUpdate(kiln.id, WORKING_STATUS.HOLD)
-                      }
-                      icon={<PauseCircleOutlined />}
-                    >
-                      Hold
-                    </Button>
-                  </Col>
-                  <Col>
-                    <Button
-                      className="shutdown"
-                      icon={<CloseCircleOutlined />}
-                      onClick={() =>
-                        handleStatusUpdate(kiln.id, WORKING_STATUS.SHUT_DOWN)
-                      }
-                    >
-                      Shutdown
-                    </Button>
-                  </Col>
+                  {kiln.working_status === WORKING_STATUS.NOT_STARTED && (
+                    <Col>
+                      <Button
+                        className="running"
+                        type="primary"
+                        onClick={() =>
+                          handleStatusUpdate(kiln._id, WORKING_STATUS.STARTED,
+                           setSelectedMachineIndex(index) 
+                          )
+                        }
+                        icon={<PlayCircleOutlined />}
+                      >
+                        Start
+                      </Button>
+                    </Col>
+                  )}
+                  
+                  {kiln.working_status === WORKING_STATUS.STARTED && (
+                    <>
+                     <Col>
+                      <Button
+                        className="hold"
+                        onClick={() =>
+                          handleStatusUpdate(kiln._id, WORKING_STATUS.HOLD)
+                        }
+                        icon={<PauseCircleOutlined />}
+                      >
+                        Hold
+                      </Button>
+                    </Col>
+                    <Col>
+                      <Button
+                        className="shutdown"
+                        icon={<CloseCircleOutlined />}
+                        onClick={() =>
+                          handleStatusUpdate(kiln._id, WORKING_STATUS.SHUT_DOWN)
+                        }
+                      >
+                        Shutdown
+                      </Button>
+                    </Col>
+                    </>
+                     
+                  )}    
+                 
                 </Row>
               </div>
             </Card>
@@ -319,9 +321,9 @@ const Machine = () => {
       </Row>
       <Modal
         title={editingKiln ? "Edit Kiln" : "Add New Kiln"}
-        open={isModalOpen}
+        open={isMachineModalOpen}
         onCancel={() => {
-          setIsModalOpen(false);
+          SetIsMachineModalOpen(false);
           setEditingKiln(null);
           form.resetFields();
         }}
@@ -378,16 +380,18 @@ const Machine = () => {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => setIsAddMaterialModalOpen(true)}
+            onClick={() => {setIsAddMaterialModalOpen(true); fetchMaterials()}}
           >
             Add Material
           </Button>
         }
       >
         <Table
-          dataSource={materials.map((material, index) => ({
+          dataSource={kilns[selectedMachineIndex]?.KilnMaterial?.map((item, index) => ({
             key: index,
-            name: material.name,
+            name: item.material_id.name,
+            quantity:item.quantity
+
           }))}
           columns={[
             {
@@ -395,51 +399,54 @@ const Machine = () => {
               dataIndex: "name",
               key: "name",
             },
+            {
+              title: "Quantity",
+              dataIndex: "quantity",
+              key: "quantity",
+            },
           ]}
           pagination={false}
         />
       </Modal>
 
       <Modal
-  title="Add Material"
-  open={isAddMaterialModalOpen}
-  onCancel={() => setIsAddMaterialModalOpen(false)}
-  onOk={handleSaveMaterial}
->
-  <Form layout="vertical">
-    <Form.Item
-      label="Select Material"
-      rules={[{ required: true, message: "Please select a material" }]}
-    >
-      <Select
-        placeholder="Select a material"
-        style={{ width: "100%" }}
-        value={selectedMaterial}
-        onChange={(value) => setSelectedMaterial(value)} // Update material ID
+        title="Add Material"
+        open={isAddMaterialModalOpen}
+        onCancel={() => setIsAddMaterialModalOpen(false)}
+        onOk={handleSaveMaterial}
       >
-        {materials.map((material) => (
-          <Option key={material.id} value={material.id}>
-            {material.name}
-          </Option>
-        ))}
-      </Select>
-    </Form.Item>
+        <Form layout="vertical">
+          <Form.Item
+            label="Select Material"
+            rules={[{ required: true, message: "Please select a material" }]}
+          >
+            <Select
+              placeholder="Select a material"
+              style={{ width: "100%" }}
+              value={selectedMaterial}
+              onChange={(value) => setSelectedMaterial(value)} // Update material ID
+            >
+              {materials.map((material) => (
+                <Option key={material.id} value={material.id}>
+                  {material.name}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
 
-    <Form.Item
-      label="Quantity"
-      rules={[{ required: true, message: "Please enter a quantity" }]}
-    >
-      <Input
-        type="number"
-        placeholder="Enter quantity"
-        value={selectedQuantity}
-        onChange={(e) => setSelectedQuantity(Number(e.target.value))} // Update quantity
-      />
-    </Form.Item>
-  </Form>
-</Modal>
-
-
+          <Form.Item
+            label="Quantity"
+            rules={[{ required: true, message: "Please enter a quantity" }]}
+          >
+            <Input
+              type="number"
+              placeholder="Enter quantity"
+              value={selectedQuantity}
+              onChange={(e) => setSelectedQuantity(Number(e.target.value))} // Update quantity
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
