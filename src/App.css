@@ -62,3 +62,8 @@ border-top: 1px solid rgba(0, 0, 0, 0.15);
   border-color: #FF9800;
   color: white,
 }
+
+.ant-modal-mask {
+  backdrop-filter: blur(5px);
+}
+

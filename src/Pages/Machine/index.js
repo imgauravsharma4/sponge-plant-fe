@@ -9,10 +9,11 @@ import {
   Typography,
   Modal,
   Form,
-  // Select,
+  Select,
   Popconfirm,
   Space,
   message,
+  Table,
   // Spin,
 } from "antd";
 import {
@@ -29,12 +30,17 @@ import API_ENDPOINTS from "../../Config/config";
 import axios from "axios";
 
 const { Title } = Typography;
-// const { Option } = Select;
+const { Option } = Select;
 
 const Machine = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingKiln, setEditingKiln] = useState(null);
   const [kilns, setKilns] = useState([]);
+  const [materials, setMaterials] = useState([]);
+  const [currentKilnId, setCurrentKilnId] = useState(null);
+  const [selectedMaterial, setSelectedMaterial] = useState(null);
+  const [isAddMaterialModalOpen, setIsAddMaterialModalOpen] = useState(false); 
+  const [selectedQuantity,setSelectedQuantity]=useState()
 
   const [form] = Form.useForm();
 
@@ -54,10 +60,13 @@ const Machine = () => {
     }
   };
 
+
   useEffect(() => {
-    console.log("apiendposuiwth", API_ENDPOINTS.MACHINE);
     fetchKilns();
   }, []);
+
+
+
 
   const handleAddKiln = async (values) => {
     try {
@@ -116,17 +125,35 @@ const Machine = () => {
       message.error("Failed to delete kiln");
     }
   };
-
+  const fetchMaterials = async () => {
+    try {
+      const response = await axios.get(API_ENDPOINTS.MATERIAL);
+      console.log("OOO", response)
+      setMaterials(response.data.result);
+    } catch (error) {
+      console.error("Failed to fetch materials:", error);
+      message.error("Failed to fetch material data");
+    }
+  };
   const handleStatusUpdate = async (kilnId, status) => {
     try {
       const payload = {
         id: kilnId,
         working_status: status,
       };
-
       await axios.post(API_ENDPOINTS.MACHINE, payload);
+      const kilnIndex = kilns.findIndex((kiln) => kiln.id === kilnId);
+      const updatedKilns = [...kilns];
+      updatedKilns[kilnIndex].working_status = status;  
+      setKilns(updatedKilns);
+  
       message.success(`Kiln status updated to ${status} successfully!`);
-      fetchKilns();
+  
+      if (status === WORKING_STATUS.STARTED) {
+        setCurrentKilnId(kilnId);
+        fetchMaterials();
+        setIsModalOpen(true);
+      }
     } catch (error) {
       console.error("Failed to update kiln status:", error);
       message.error("Failed to update kiln status");
@@ -152,6 +179,32 @@ const Machine = () => {
         return { backgroundColor: "#D3D3D3", color: "#333" }; // Default
     }
   };
+
+
+
+
+  const handleSaveMaterial = async () => {
+    try {
+      if (!selectedMaterial || !selectedQuantity) {
+        message.warning("Please select a material and enter the quantity.");
+        return;
+      }
+      const payload = {
+        material_id: selectedMaterial, 
+        kiln_id: currentKilnId,       
+        quantity: selectedQuantity,   
+      };
+      await axios.post(`${API_ENDPOINTS.MACHINE}/kiln-material`, payload);
+      message.success("Material added successfully!");
+      setIsAddMaterialModalOpen(false); 
+      fetchMaterials(); 
+    } catch (error) {
+      console.error("Failed to add material:", error);
+      message.error("Failed to add material");
+    }
+  };
+  
+  
   return (
     <div className="p-6 relative">
       <div style={{ marginBottom: "50px" }}>
@@ -229,7 +282,7 @@ const Machine = () => {
                       className="running"
                       type="primary"
                       onClick={() =>
-                        handleStatusUpdate(kiln.id, WORKING_STATUS.STARTED)
+                          handleStatusUpdate(kiln.id, WORKING_STATUS.STARTED)
                       }
                       icon={<PlayCircleOutlined />}
                     >
@@ -260,22 +313,6 @@ const Machine = () => {
                   </Col>
                 </Row>
               </div>
-
-              {/* <div className="mb-4">
-                <Title level={5} className="mb-3">
-                  Material Feed
-                </Title>
-                <Input placeholder="Set Material Feed" />
-              </div> */}
-
-              {/* {kiln.id === 1 && (
-                <Alert
-                  message="Monitor temperature and pressure levels closely"
-                  type="warning"
-                  showIcon
-                  icon={<WarningOutlined />}
-                />
-              )} */}
             </Card>
           </Col>
         ))}
@@ -310,19 +347,6 @@ const Machine = () => {
           >
             <Input type="number" placeholder="Enter capacity" />
           </Form.Item>
-
-          {/* <Form.Item
-            name="status"
-            label="Status"
-            rules={[{ required: true, message: 'Please select status' }]}
-          >
-            <Select placeholder="Select status">
-              <Option value={WORKING_STATUS.NOT_STARTED}>Not Started</Option>
-              <Option value={WORKING_STATUS.STARTED}>Started</Option>
-              <Option value={WORKING_STATUS.HOLD}>On-Hold</Option>
-              <Option value={WORKING_STATUS.SHUT_DOWN}>Shutdown</Option>
-            </Select>
-          </Form.Item> */}
           <Form.Item className="mb-0">
             <Row gutter={16} justify="end">
               <Col>
@@ -345,6 +369,77 @@ const Machine = () => {
           </Form.Item>
         </Form>
       </Modal>
+
+      <Modal
+        title="Material List"
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        footer={
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setIsAddMaterialModalOpen(true)}
+          >
+            Add Material
+          </Button>
+        }
+      >
+        <Table
+          dataSource={materials.map((material, index) => ({
+            key: index,
+            name: material.name,
+          }))}
+          columns={[
+            {
+              title: "Material Name",
+              dataIndex: "name",
+              key: "name",
+            },
+          ]}
+          pagination={false}
+        />
+      </Modal>
+
+      <Modal
+  title="Add Material"
+  open={isAddMaterialModalOpen}
+  onCancel={() => setIsAddMaterialModalOpen(false)}
+  onOk={handleSaveMaterial}
+>
+  <Form layout="vertical">
+    <Form.Item
+      label="Select Material"
+      rules={[{ required: true, message: "Please select a material" }]}
+    >
+      <Select
+        placeholder="Select a material"
+        style={{ width: "100%" }}
+        value={selectedMaterial}
+        onChange={(value) => setSelectedMaterial(value)} // Update material ID
+      >
+        {materials.map((material) => (
+          <Option key={material.id} value={material.id}>
+            {material.name}
+          </Option>
+        ))}
+      </Select>
+    </Form.Item>
+
+    <Form.Item
+      label="Quantity"
+      rules={[{ required: true, message: "Please enter a quantity" }]}
+    >
+      <Input
+        type="number"
+        placeholder="Enter quantity"
+        value={selectedQuantity}
+        onChange={(e) => setSelectedQuantity(Number(e.target.value))} // Update quantity
+      />
+    </Form.Item>
+  </Form>
+</Modal>
+
+
     </div>
   );
 };
