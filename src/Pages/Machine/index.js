@@ -37,9 +37,9 @@ const Machine = () => {
   const [kilns, setKilns] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [currentKilnId, setCurrentKilnId] = useState(null);
-  const [selectedMaterial, setSelectedMaterial] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingRecord, setEditingRecord] = useState(null);
   const [isAddMaterialModalOpen, setIsAddMaterialModalOpen] = useState(false);
-  const [selectedQuantity, setSelectedQuantity] = useState();
   const [selectedMachineIndex, setSelectedMachineIndex] = useState(null);
   const [reload, setReload] = useState(false);
   const [form] = Form.useForm();
@@ -84,7 +84,6 @@ const Machine = () => {
         name: values.name,
         capacity: values.capacity,
       };
-
       await axios.post(API_ENDPOINTS.MACHINE, payload);
       message.success("Kiln updated successfully!");
       SetIsMachineModalOpen(false);
@@ -162,45 +161,106 @@ const Machine = () => {
     }
   };
 
-  const handleSaveMaterial = async () => {
+  const handleSaveMaterial = async (values) => {
+    const { material_id, quantity } = values;
+
     try {
-      if (!selectedMaterial || !selectedQuantity || !currentKilnId) {
-        message.warning("Please select a material and enter the quantity.");
-        return;
-      }
       const payload = {
-        material_id: selectedMaterial,
+        material_id: material_id,
         kiln_id: currentKilnId,
-        quantity: selectedQuantity,
+        quantity: quantity,
       };
-      const result = await axios.post(
+    if (isEditMode) {
+      payload._id = editingRecord.key;
+      payload.material_id = material_id; 
+      payload.kiln_id= null;
+    }
+    console.log("OPPPPPPPPPPPPPPeditttt", payload)
+    let result;
+    if (isEditMode) {
+      result = await axios.post(
+        `${API_ENDPOINTS.MACHINE_MATERIAL_ADD}`, 
+        payload
+      );
+    } else {
+      console.log("OPPPPPPPPPPPPPPeditttt", payload)
+
+      result = await axios.post(
         `${API_ENDPOINTS.MACHINE_MATERIAL_ADD}`,
         payload
       );
-      if (result) {
-        setReload(!reload);
-      }
-      message.success("Material added successfully!");
+    }
+
+    if (result) {
+      setReload(true)
+      setIsEditMode(false);
+      setEditingRecord(null);      
+      setReload(!reload);
       setIsAddMaterialModalOpen(false);
-      fetchMaterials();
+      message.success(
+        isEditMode ? "Material updated successfully!" : "Material added successfully!"
+      );
+
+      form.resetFields();
+    }
+  
     } catch (error) {
       console.error("Failed to add material:", error);
       message.error("Failed to add material");
     }
   };
+  const handleEditMaterial = async (values) => {
+    try {
+      fetchMaterials();
+      form.setFieldsValue({
+        _id: values.key,
+        quantity: values.quantity
+      });
+      setIsAddMaterialModalOpen(true);
+      setIsEditMode(true);
+      setEditingRecord(values);
+    } catch (error) {
+      message.error("Failed to update material");
+      console.error(error);
+    }
+  };
+  const handleDeleteMaterial = async (record) => {
+    try {
+      const payload = {
+        _id:  record.key,
+        status:"inactive"
+      };
+
+      console.log("payloadd",payload)
+  
+      const result = await axios.post(
+       `${API_ENDPOINTS.MACHINE_MATERIAL_ADD}`,
+        payload
+      );
+  
+      if (result) {
+        setReload(!reload);
+        message.success("Material deleted successfully!");
+      }
+    } catch (error) {
+      console.error("Failed to delete material:", error);
+      message.error("Failed to delete material");
+    } 
+  };
 
   useEffect(() => {
     fetchKilns();
+    fetchMaterials()
   }, [reload]);
 
   return (
-    <div className='p-6 relative'>
+    <div className="relative">
       <div style={{ marginBottom: "50px" }}>
-        <Title level={4} className='m-0'>
+        <Title level={4} className="m-0">
           Kiln Operations
         </Title>
         <Button
-          type='primary'
+          type="primary"
           icon={<PlusOutlined />}
           onClick={() => {
             setEditingKiln(null);
@@ -233,22 +293,22 @@ const Machine = () => {
                             setSelectedMachineIndex(index);
                             setCurrentKilnId(kiln._id);
                           }}
-                          className='mouse-pointer'
+                          className="mouse-pointer"
                         />
                         <Button
-                          type='text'
+                          type="text"
                           icon={<EditOutlined />}
                           onClick={() => showEditModal(kiln)}
                         />
                         <Popconfirm
-                          title='Delete Kiln'
-                          description='Are you sure you want to delete this kiln?'
+                          title="Delete Kiln"
+                          description="Are you sure you want to delete this kiln?"
                           onConfirm={() => handleDeleteKiln(kiln)}
-                          okText='Yes'
-                          cancelText='No'
+                          okText="Yes"
+                          cancelText="No"
                         >
                           <Button
-                            type='text'
+                            type="text"
                             danger
                             icon={<DeleteOutlined />}
                           />
@@ -258,7 +318,7 @@ const Machine = () => {
                   </Row>
                 }
               >
-                <div className='mb-4'>
+                <div className="mb-4">
                   <h3>
                     {kiln.working_status === WORKING_STATUS.NOT_STARTED
                       ? "Not Started"
@@ -274,16 +334,16 @@ const Machine = () => {
                   </p>
                   <p>Production : {kiln.totalProduction}</p>
                 </div>
-                <div className='mb-4'>
-                  <Title level={5} className='mb-3'>
+                <div className="mb-4">
+                  <Title level={5} className="mb-3">
                     Status Control
                   </Title>
                   <Row gutter={16}>
                     {kiln.working_status !== WORKING_STATUS.STARTED && (
                       <Col>
                         <Button
-                          className='running'
-                          type='primary'
+                          className="running"
+                          type="primary"
                           onClick={() => {
                             handleStatusUpdate(
                               kiln._id,
@@ -303,7 +363,7 @@ const Machine = () => {
                       <>
                         <Col>
                           <Button
-                            className='hold'
+                            className="hold"
                             onClick={() =>
                               handleStatusUpdate(
                                 kiln._id,
@@ -318,7 +378,7 @@ const Machine = () => {
                         </Col>
                         <Col>
                           <Button
-                            className='shutdown'
+                            className="shutdown"
                             icon={<CloseCircleOutlined />}
                             onClick={() =>
                               handleStatusUpdate(
@@ -351,26 +411,26 @@ const Machine = () => {
       >
         <Form
           form={form}
-          layout='vertical'
+          layout="vertical"
           onFinish={editingKiln ? handleEditKiln : handleAddKiln}
         >
           <Form.Item
-            name='name'
-            label='Kiln Name'
+            name="name"
+            label="Kiln Name"
             rules={[{ required: true, message: "Please enter kiln name" }]}
           >
-            <Input placeholder='Enter kiln name' />
+            <Input placeholder="Enter kiln name" />
           </Form.Item>
 
           <Form.Item
-            name='capacity'
-            label='Capacity (Ton/h)'
+            name="capacity"
+            label="Capacity (Ton/h)"
             rules={[{ required: true, message: "Please enter capacity" }]}
           >
-            <Input type='number' placeholder='Enter capacity' />
+            <Input type="number" placeholder="Enter capacity" />
           </Form.Item>
-          <Form.Item className='mb-0'>
-            <Row gutter={16} justify='end'>
+          <Form.Item className="mb-0">
+            <Row gutter={16} justify="end">
               <Col>
                 <Button
                   onClick={() => {
@@ -383,7 +443,7 @@ const Machine = () => {
                 </Button>
               </Col>
               <Col>
-                <Button type='primary' htmlType='submit'>
+                <Button type="primary" htmlType="submit">
                   {editingKiln ? "Save Changes" : "Add Kiln"}
                 </Button>
               </Col>
@@ -393,12 +453,13 @@ const Machine = () => {
       </Modal>
 
       <Modal
-        title='Material List'
+        title="Material List"
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         footer={
           <Button
-            type='primary'
+            type="primary"
+            htmlType="submit"
             icon={<PlusOutlined />}
             onClick={() => {
               setIsAddMaterialModalOpen(true);
@@ -412,7 +473,7 @@ const Machine = () => {
         <Table
           dataSource={kilns[selectedMachineIndex]?.KilnMaterial?.map(
             (item, index) => ({
-              key: index,
+              key: item._id,
               name: item.material_id.name,
               quantity: item.quantity,
             })
@@ -428,28 +489,63 @@ const Machine = () => {
               dataIndex: "quantity",
               key: "quantity",
             },
+            {
+              title: "Actions",
+              key: "actions",
+              render: (records) => (
+                <Space size="middle">
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<EditOutlined />}
+                    onClick={() => {
+                      handleEditMaterial(records);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    type="danger"
+                    size="small"
+                    icon={<DeleteOutlined />}
+                    onClick={() => {
+                      Modal.confirm({
+                        title: 'Are you sure you want to delete this material?',
+                        content: `Material: ${records.name}`,
+                        onOk(){
+                          handleDeleteMaterial(records)
+                        }
+                      });
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </Space>
+              ),
+            },
           ]}
           pagination={false}
         />
       </Modal>
 
       <Modal
-        title='Add Material'
+        title={isEditMode ? "Edit Material" : "Add Material"}
         open={isAddMaterialModalOpen}
-        onCancel={() => setIsAddMaterialModalOpen(false)}
-        onOk={handleSaveMaterial}
+        onCancel={() => {
+          setIsAddMaterialModalOpen(false);
+          setIsEditMode(false);
+          setEditingRecord(null);
+          form.resetFields();
+        }}
+        footer={null}
       >
-        <Form layout='vertical'>
+        <Form layout="vertical" form={form} onFinish={handleSaveMaterial}>
           <Form.Item
-            label='Select Material'
+            label="Select Material"
+            name="material_id"
             rules={[{ required: true, message: "Please select a material" }]}
           >
-            <Select
-              placeholder='Select a material'
-              style={{ width: "100%" }}
-              value={selectedMaterial}
-              onChange={(value) => setSelectedMaterial(value)} // Update material ID
-            >
+            <Select placeholder="Select a material" style={{ width: "100%" }}>
               {materials.map((material) => (
                 <Option key={material.id} value={material.id}>
                   {material.name}
@@ -459,15 +555,30 @@ const Machine = () => {
           </Form.Item>
 
           <Form.Item
-            label='Quantity'
+            label="Quantity"
+            name="quantity"
             rules={[{ required: true, message: "Please enter a quantity" }]}
           >
-            <Input
-              type='number'
-              placeholder='Enter quantity'
-              value={selectedQuantity}
-              onChange={(e) => setSelectedQuantity(Number(e.target.value))} // Update quantity
-            />
+            <Input type="number" placeholder="Enter quantity" />
+          </Form.Item>
+          <Form.Item>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "10px",
+              }}
+            >
+              <Button
+                onClick={() => setIsAddMaterialModalOpen(false)}
+                className="btn btn-secondary"
+              >
+                Cancel
+              </Button>
+              <Button htmlType="submit" type="primary">
+                {isEditMode ? "Update" : "Add"}
+              </Button>
+            </div>
           </Form.Item>
         </Form>
       </Modal>

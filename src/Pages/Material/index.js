@@ -25,7 +25,6 @@ function Material() {
   const fetchData = async () => {
     try {
       const response = await axios.get(API_ENDPOINTS.MATERIAL);
-      console.log("AAAA", response);
       setDataSource(response.data.result);
     } catch (error) {
       console.error("Failed to fetch data:", error);
