@@ -173,7 +173,7 @@ const Machine = () => {
     if (isEditMode) {
       payload.id = editingRecord.key;
       payload.material_id = material_id; 
-      payload.kiln_id= null;
+      payload.kiln_id= currentKilnId;
     }
     let result;
     if (isEditMode) {
@@ -182,7 +182,6 @@ const Machine = () => {
         payload
       );
     } else {
-
       result = await axios.post(
         `${API_ENDPOINTS.MACHINE_MATERIAL_ADD}`,
         payload
@@ -211,7 +210,7 @@ const Machine = () => {
     try {
       fetchMaterials();
       form.setFieldsValue({
-        _id: values.key,
+        id: values.key,
         quantity: values.quantity
       });
       setIsAddMaterialModalOpen(true);
