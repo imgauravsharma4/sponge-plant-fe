@@ -175,7 +175,6 @@ const Machine = () => {
       payload.material_id = material_id; 
       payload.kiln_id= null;
     }
-    console.log("OPPPPPPPPPPPPPPeditttt", payload)
     let result;
     if (isEditMode) {
       result = await axios.post(
@@ -183,7 +182,6 @@ const Machine = () => {
         payload
       );
     } else {
-      console.log("OPPPPPPPPPPPPPPeditttt", payload)
 
       result = await axios.post(
         `${API_ENDPOINTS.MACHINE_MATERIAL_ADD}`,
