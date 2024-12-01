@@ -171,7 +171,7 @@ const Machine = () => {
         quantity: quantity,
       };
     if (isEditMode) {
-      payload._id = editingRecord.key;
+      payload.id = editingRecord.key;
       payload.material_id = material_id; 
       payload.kiln_id= null;
     }
@@ -227,7 +227,7 @@ const Machine = () => {
   const handleDeleteMaterial = async (record) => {
     try {
       const payload = {
-        _id:  record.key,
+        id:  record.key,
         status:"inactive"
       };
 
