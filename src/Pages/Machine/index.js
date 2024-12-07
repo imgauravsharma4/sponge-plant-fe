@@ -42,6 +42,7 @@ const Machine = () => {
   const [isAddMaterialModalOpen, setIsAddMaterialModalOpen] = useState(false);
   const [selectedMachineIndex, setSelectedMachineIndex] = useState(null);
   const [reload, setReload] = useState(false);
+  const [quantity, setQuantity] = useState(0);
   const [form] = Form.useForm();
 
   const WORKING_STATUS = {
@@ -170,37 +171,38 @@ const Machine = () => {
         kiln_id: currentKilnId,
         quantity: quantity,
       };
-    if (isEditMode) {
-      payload.id = editingRecord.key;
-      payload.material_id = material_id; 
-      payload.kiln_id= currentKilnId;
-    }
-    let result;
-    if (isEditMode) {
-      result = await axios.post(
-        `${API_ENDPOINTS.MACHINE_MATERIAL_ADD}`, 
-        payload
-      );
-    } else {
-      result = await axios.post(
-        `${API_ENDPOINTS.MACHINE_MATERIAL_ADD}`,
-        payload
-      );
-    }
+      if (isEditMode) {
+        payload.id = editingRecord.key;
+        payload.material_id = material_id;
+        payload.kiln_id = currentKilnId;
+      }
+      let result;
+      if (isEditMode) {
+        result = await axios.post(
+          `${API_ENDPOINTS.MACHINE_MATERIAL_ADD}`,
+          payload
+        );
+      } else {
+        result = await axios.post(
+          `${API_ENDPOINTS.MACHINE_MATERIAL_ADD}`,
+          payload
+        );
+      }
 
-    if (result) {
-      setReload(true)
-      setIsEditMode(false);
-      setEditingRecord(null);      
-      setReload(!reload);
-      setIsAddMaterialModalOpen(false);
-      message.success(
-        isEditMode ? "Material updated successfully!" : "Material added successfully!"
-      );
+      if (result) {
+        setReload(true);
+        setIsEditMode(false);
+        setEditingRecord(null);
+        setReload(!reload);
+        setIsAddMaterialModalOpen(false);
+        message.success(
+          isEditMode
+            ? "Material updated successfully!"
+            : "Material added successfully!"
+        );
 
-      form.resetFields();
-    }
-  
+        form.resetFields();
+      }
     } catch (error) {
       console.error("Failed to add material:", error);
       message.error("Failed to add material");
@@ -211,7 +213,7 @@ const Machine = () => {
       fetchMaterials();
       form.setFieldsValue({
         id: values.key,
-        quantity: values.quantity
+        quantity: values.quantity,
       });
       setIsAddMaterialModalOpen(true);
       setIsEditMode(true);
@@ -224,17 +226,17 @@ const Machine = () => {
   const handleDeleteMaterial = async (record) => {
     try {
       const payload = {
-        id:  record.key,
-        status:"inactive"
+        id: record.key,
+        status: "inactive",
       };
 
-      console.log("payloadd",payload)
-  
+      console.log("payloadd", payload);
+
       const result = await axios.post(
-       `${API_ENDPOINTS.MACHINE_MATERIAL_ADD}`,
+        `${API_ENDPOINTS.MACHINE_MATERIAL_ADD}`,
         payload
       );
-  
+
       if (result) {
         setReload(!reload);
         message.success("Material deleted successfully!");
@@ -242,12 +244,16 @@ const Machine = () => {
     } catch (error) {
       console.error("Failed to delete material:", error);
       message.error("Failed to delete material");
-    } 
+    }
+  };
+  const handleQuantityChange = (e) => {
+    const inputQuantity = parseFloat(e.target.value);
+    setQuantity(inputQuantity);
   };
 
   useEffect(() => {
     fetchKilns();
-    fetchMaterials()
+    fetchMaterials();
   }, [reload]);
 
   return (
@@ -507,11 +513,11 @@ const Machine = () => {
                     icon={<DeleteOutlined />}
                     onClick={() => {
                       Modal.confirm({
-                        title: 'Are you sure you want to delete this material?',
+                        title: "Are you sure you want to delete this material?",
                         content: `Material: ${records.name}`,
-                        onOk(){
-                          handleDeleteMaterial(records)
-                        }
+                        onOk() {
+                          handleDeleteMaterial(records);
+                        },
                       });
                     }}
                   >
@@ -554,9 +560,26 @@ const Machine = () => {
           <Form.Item
             label="Quantity"
             name="quantity"
-            rules={[{ required: true, message: "Please enter a quantity" }]}
+            rules={[
+              { required: true, message: "Please enter a quantity" },
+              {
+                validator: (_, value) => {
+                  if (value > 100) {
+                    return Promise.reject(
+                      new Error("Quantity cannot exceed 100")
+                    );
+                  }
+                  return Promise.resolve();
+                },
+              },
+            ]}
           >
-            <Input type="number" placeholder="Enter quantity" />
+            <Input
+              type="number"
+              placeholder="Enter quantity"
+              onChange={handleQuantityChange}
+              max={100}
+            />
           </Form.Item>
           <Form.Item>
             <div
@@ -572,7 +595,11 @@ const Machine = () => {
               >
                 Cancel
               </Button>
-              <Button htmlType="submit" type="primary">
+              <Button
+                htmlType="submit"
+                type="primary"
+                disabled={quantity > 100}
+              >
                 {isEditMode ? "Update" : "Add"}
               </Button>
             </div>
