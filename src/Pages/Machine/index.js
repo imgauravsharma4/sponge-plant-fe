@@ -59,13 +59,17 @@ const Machine = () => {
     const response = await APIS.getAllMaterial();
     setMaterials(response);
   };
-  const handleAddEditMachine = async (values) => {
+  const handleAddEditMachine = async (values, isDelete) => {
     const payload = {
       ...values,
       ...(editMachineData?._id &&
         editMachineData?._id?.length > 1 && {
           id: editMachineData._id,
         }),
+      ...(isDelete && {
+        id: values._id,
+        status: defaultStatus.INACTIVE,
+      }),
     };
     APIS.addAndEditMachine(payload)
       .then((res) => {
@@ -85,25 +89,6 @@ const Machine = () => {
         SetIsMachineModalOpen(false);
         form.resetFields();
         setEditMachineData(null);
-      });
-  };
-
-  const handleDeleteMachine = async (data) => {
-    const payload = {
-      id: data._id,
-      status: defaultStatus.INACTIVE,
-    };
-    APIS.addAndEditMachine(payload)
-      .then((res) => {
-        ToastMessage(
-          messageStatus.SUCCESS,
-          successMessage.DELETE_SUCCESS_MESSAGE("Machine")
-        );
-        setReload(!reload);
-      })
-      .catch((error) => {
-        console.error("Delete failed:", error);
-        ToastMessage(messageStatus.ERROR, errorMessage.SERVER_ERROR);
       });
   };
 
@@ -254,7 +239,7 @@ const Machine = () => {
                         <Popconfirm
                           title='Delete Kiln'
                           description='Are you sure you want to delete this kiln?'
-                          onConfirm={() => handleDeleteMachine(machine)}
+                          onConfirm={() => handleAddEditMachine(machine, true)}
                           okText='Yes'
                           cancelText='No'
                         >
@@ -361,7 +346,11 @@ const Machine = () => {
         }}
         footer={null}
       >
-        <Form form={form} layout='vertical' onFinish={handleAddEditMachine}>
+        <Form
+          form={form}
+          layout='vertical'
+          onFinish={(data) => handleAddEditMachine(data, false)}
+        >
           <Form.Item
             name='name'
             label='Kiln Name'
