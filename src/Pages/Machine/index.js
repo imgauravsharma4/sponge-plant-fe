@@ -3,7 +3,6 @@ import {
   Card,
   Button,
   Input,
-  // Alert,
   Row,
   Col,
   Typography,
@@ -12,7 +11,6 @@ import {
   Select,
   Popconfirm,
   Space,
-  message,
   Table,
 } from "antd";
 import {
@@ -23,20 +21,28 @@ import {
   EditOutlined,
   DeleteOutlined,
 } from "@ant-design/icons";
-import API_ENDPOINTS from "../../Config/config";
-import axios from "axios";
 import { FaEye } from "react-icons/fa";
+import { APIS } from "../../APIs/Apis";
+import { options } from "../../Config/options";
+import ToastMessage from "../../Component/ToastMessage/ToastMessage";
 
 const { Title } = Typography;
 const { Option } = Select;
+const {
+  WORKING_STATUS,
+  successMessage,
+  errorMessage,
+  messageStatus,
+  defaultStatus,
+} = options;
 
 const Machine = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMachineModalOpen, SetIsMachineModalOpen] = useState(false);
-  const [editingKiln, setEditingKiln] = useState(null);
-  const [kilns, setKilns] = useState([]);
+  const [editMachineData, setEditMachineData] = useState(null);
+  const [machines, setMachines] = useState([]);
   const [materials, setMaterials] = useState([]);
-  const [currentKilnId, setCurrentKilnId] = useState(null);
+  const [currentMachineId, setCurrentMachineId] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
   const [isAddMaterialModalOpen, setIsAddMaterialModalOpen] = useState(false);
@@ -45,104 +51,88 @@ const Machine = () => {
   const [quantity, setQuantity] = useState(0);
   const [form] = Form.useForm();
 
-  const WORKING_STATUS = {
-    NOT_STARTED: "not_started",
-    STARTED: "started",
-    HOLD: "hold",
-    SHUT_DOWN: "shut_down",
-  };
-  const fetchKilns = async () => {
-    try {
-      const response = await axios.get(API_ENDPOINTS.MACHINE);
-      setKilns(response.data.result);
-    } catch (error) {
-      console.error("Failed to fetch kilns:", error);
-      message.error("Failed to fetch kiln data");
-    }
-  };
-
-  const handleAddKiln = async (values) => {
-    try {
-      const payload = {
-        name: values.name,
-        capacity: values.capacity,
-      };
-      await axios.post(API_ENDPOINTS.MACHINE, payload);
-      message.success("Kiln added successfully!");
-      fetchKilns();
-      SetIsMachineModalOpen(false);
-      form.resetFields();
-    } catch (error) {
-      console.error("Failed to add kiln:", error);
-      message.error("Failed to add kiln");
-    }
-  };
-
-  const handleEditKiln = async (values) => {
-    try {
-      const payload = {
-        id: editingKiln._id,
-        name: values.name,
-        capacity: values.capacity,
-      };
-      await axios.post(API_ENDPOINTS.MACHINE, payload);
-      message.success("Kiln updated successfully!");
-      SetIsMachineModalOpen(false);
-      setReload(!reload);
-      setIsModalOpen(false);
-      setEditingKiln(null);
-      form.resetFields();
-    } catch (error) {
-      console.error("Failed to edit kiln:", error);
-      message.error("Failed to update kiln");
-    }
-  };
-
-  const handleDeleteKiln = async (kiln) => {
-    try {
-      const payload = {
-        id: kiln._id,
-        status: "inactive",
-      };
-      await axios.post(API_ENDPOINTS.MACHINE, payload);
-      message.success("Kiln deleted successfully!");
-      setReload(!reload);
-    } catch (error) {
-      console.error("Failed to delete kiln:", error);
-      message.error("Failed to delete kiln");
-    }
+  const fetchMachines = async () => {
+    const response = await APIS.getAllMachine();
+    setMachines(response);
   };
   const fetchMaterials = async () => {
-    try {
-      const response = await axios.get(API_ENDPOINTS.MATERIAL);
-      setMaterials(response.data.result);
-    } catch (error) {
-      console.error("Failed to fetch materials:", error);
-      message.error("Failed to fetch material data");
-    }
+    const response = await APIS.getAllMaterial();
+    setMaterials(response);
   };
-  const handleStatusUpdate = async (kilnId, status, clickedIndex) => {
-    try {
-      setCurrentKilnId(kilnId);
-      const payload = {
-        id: kilnId,
-        working_status: status,
-      };
-      await axios.post(API_ENDPOINTS.MACHINE, payload);
-      if (status === WORKING_STATUS.STARTED) {
-        if (kilns[clickedIndex]?.KilnMaterial?.length === 0) {
-          setIsModalOpen(true);
+  const handleAddEditMachine = async (values) => {
+    const payload = {
+      ...values,
+      ...(editMachineData?._id &&
+        editMachineData?._id?.length > 1 && {
+          id: editMachineData._id,
+        }),
+    };
+    APIS.addAndEditMachine(payload)
+      .then((res) => {
+        ToastMessage(
+          messageStatus.SUCCESS,
+          successMessage.UPDATE_SUCCESS_MESSAGE("Machine")
+        );
+        setReload(!reload);
+        SetIsMachineModalOpen(false);
+        setEditMachineData(null);
+
+        form.resetFields();
+      })
+      .catch((error) => {
+        console.error("Delete failed:", error);
+        ToastMessage(messageStatus.ERROR, errorMessage.SERVER_ERROR);
+        SetIsMachineModalOpen(false);
+        form.resetFields();
+        setEditMachineData(null);
+      });
+  };
+
+  const handleDeleteMachine = async (data) => {
+    const payload = {
+      id: data._id,
+      status: defaultStatus.INACTIVE,
+    };
+    APIS.addAndEditMachine(payload)
+      .then((res) => {
+        ToastMessage(
+          messageStatus.SUCCESS,
+          successMessage.DELETE_SUCCESS_MESSAGE("Machine")
+        );
+        setReload(!reload);
+      })
+      .catch((error) => {
+        console.error("Delete failed:", error);
+        ToastMessage(messageStatus.ERROR, errorMessage.SERVER_ERROR);
+      });
+  };
+
+  const handleStatusUpdate = async (machineId, status, clickedIndex) => {
+    setCurrentMachineId(machineId);
+    const payload = {
+      id: machineId,
+      working_status: status,
+    };
+    APIS.addAndEditMachine(payload)
+      .then((res) => {
+        ToastMessage(
+          messageStatus.SUCCESS,
+          successMessage.UPDATE_SUCCESS_MESSAGE("Machine")
+        );
+        setReload(!reload);
+        if (status === WORKING_STATUS.STARTED) {
+          if (machines[clickedIndex]?.KilnMaterial?.length === 0) {
+            setIsModalOpen(true);
+          }
         }
-      }
-      message.success(`Kiln status updated to ${status} successfully!`);
-      setReload(!reload);
-    } catch (error) {
-      console.error("Failed to update kiln status:", error);
-      message.error("Failed to update kiln status");
-    }
+      })
+      .catch((error) => {
+        console.error("Delete failed:", error);
+        ToastMessage(messageStatus.ERROR, errorMessage.SERVER_ERROR);
+      });
   };
   const showEditModal = (kiln) => {
-    setEditingKiln(kiln);
+    setEditMachineData(kiln);
     SetIsMachineModalOpen(true);
     form.setFieldsValue({
       name: kiln.name,
@@ -162,89 +152,44 @@ const Machine = () => {
     }
   };
 
-  const handleSaveMaterial = async (values) => {
-    const { material_id, quantity } = values;
-
-    try {
-      const payload = {
-        material_id: material_id,
-        kiln_id: currentKilnId,
-        quantity: quantity,
-      };
-      if (isEditMode) {
-        payload.id = editingRecord.key;
-        payload.material_id = material_id;
-        payload.kiln_id = currentKilnId;
-      }
-      let result;
-      if (isEditMode) {
-        result = await axios.post(
-          `${API_ENDPOINTS.MACHINE_MATERIAL_ADD}`,
-          payload
+  const handleSaveMaterial = async (values, isDelete) => {
+    const payload = {
+      ...values,
+      machine_id: currentMachineId,
+      ...(isEditMode &&
+        editingRecord &&
+        editingRecord?.id?.length > 0 && {
+          id: editingRecord.id,
+        }),
+      ...(isDelete && {
+        status: defaultStatus.INACTIVE,
+      }),
+    };
+    APIS.postMachineMaterial(payload)
+      .then((res) => {
+        ToastMessage(
+          messageStatus.SUCCESS,
+          successMessage.UPDATE_SUCCESS_MESSAGE("Material")
         );
-      } else {
-        result = await axios.post(
-          `${API_ENDPOINTS.MACHINE_MATERIAL_ADD}`,
-          payload
-        );
-      }
-
-      if (result) {
-        setReload(true);
+        setReload(!reload);
         setIsEditMode(false);
         setEditingRecord(null);
-        setReload(!reload);
         setIsAddMaterialModalOpen(false);
-        message.success(
-          isEditMode
-            ? "Material updated successfully!"
-            : "Material added successfully!"
-        );
-
         form.resetFields();
-      }
-    } catch (error) {
-      console.error("Failed to add material:", error);
-      message.error("Failed to add material");
-    }
+      })
+      .catch((error) => {
+        console.error("Delete failed:", error);
+        ToastMessage(messageStatus.ERROR, errorMessage.SERVER_ERROR);
+      });
   };
   const handleEditMaterial = async (values) => {
-    try {
-      fetchMaterials();
-      form.setFieldsValue({
-        id: values.key,
-        quantity: values.quantity,
-      });
-      setIsAddMaterialModalOpen(true);
-      setIsEditMode(true);
-      setEditingRecord(values);
-    } catch (error) {
-      message.error("Failed to update material");
-      console.error(error);
-    }
-  };
-  const handleDeleteMaterial = async (record) => {
-    try {
-      const payload = {
-        id: record.key,
-        status: "inactive",
-      };
-
-      console.log("payloadd", payload);
-
-      const result = await axios.post(
-        `${API_ENDPOINTS.MACHINE_MATERIAL_ADD}`,
-        payload
-      );
-
-      if (result) {
-        setReload(!reload);
-        message.success("Material deleted successfully!");
-      }
-    } catch (error) {
-      console.error("Failed to delete material:", error);
-      message.error("Failed to delete material");
-    }
+    form.setFieldsValue({
+      id: values.id,
+      quantity: values.quantity,
+    });
+    setIsAddMaterialModalOpen(true);
+    setIsEditMode(true);
+    setEditingRecord(values);
   };
   const handleQuantityChange = (e) => {
     const inputQuantity = parseFloat(e.target.value);
@@ -252,21 +197,24 @@ const Machine = () => {
   };
 
   useEffect(() => {
-    fetchKilns();
-    fetchMaterials();
+    fetchMachines();
   }, [reload]);
 
+  useEffect(() => {
+    fetchMaterials();
+  }, []);
+
   return (
-    <div className="relative">
+    <div className='relative'>
       <div style={{ marginBottom: "50px" }}>
-        <Title level={4} className="m-0">
+        <Title level={4} className='m-0'>
           Kiln Operations
         </Title>
         <Button
-          type="primary"
+          type='primary'
           icon={<PlusOutlined />}
           onClick={() => {
-            setEditingKiln(null);
+            setEditMachineData(null);
             SetIsMachineModalOpen(true);
             form.resetFields();
           }}
@@ -276,13 +224,13 @@ const Machine = () => {
       </div>
 
       <Row gutter={[24, 24]}>
-        {kilns &&
-          kilns.length > 0 &&
-          kilns.map((kiln, index) => (
-            <Col xs={6} lg={6} key={kiln.id}>
+        {machines &&
+          machines.length > 0 &&
+          machines.map((machine, index) => (
+            <Col xs={6} lg={6} key={machine.id}>
               <Card
-                title={kiln.name}
-                style={getCardStyle(kiln.working_status)}
+                title={machine.name}
+                style={getCardStyle(machine.working_status)}
                 extra={
                   <Row>
                     <Col span={16}>
@@ -294,24 +242,24 @@ const Machine = () => {
                           onClick={() => {
                             setIsModalOpen(true);
                             setSelectedMachineIndex(index);
-                            setCurrentKilnId(kiln._id);
+                            setCurrentMachineId(machine._id);
                           }}
-                          className="mouse-pointer"
+                          className='mouse-pointer'
                         />
                         <Button
-                          type="text"
+                          type='text'
                           icon={<EditOutlined />}
-                          onClick={() => showEditModal(kiln)}
+                          onClick={() => showEditModal(machine)}
                         />
                         <Popconfirm
-                          title="Delete Kiln"
-                          description="Are you sure you want to delete this kiln?"
-                          onConfirm={() => handleDeleteKiln(kiln)}
-                          okText="Yes"
-                          cancelText="No"
+                          title='Delete Kiln'
+                          description='Are you sure you want to delete this kiln?'
+                          onConfirm={() => handleDeleteMachine(machine)}
+                          okText='Yes'
+                          cancelText='No'
                         >
                           <Button
-                            type="text"
+                            type='text'
                             danger
                             icon={<DeleteOutlined />}
                           />
@@ -321,35 +269,36 @@ const Machine = () => {
                   </Row>
                 }
               >
-                <div className="mb-4">
+                <div className='mb-4'>
                   <h3>
-                    {kiln.working_status === WORKING_STATUS.NOT_STARTED
+                    {machine.working_status === WORKING_STATUS.NOT_STARTED
                       ? "Not Started"
-                      : kiln.working_status === WORKING_STATUS.HOLD
+                      : machine.working_status === WORKING_STATUS.HOLD
                       ? " On Hold"
-                      : kiln.working_status === WORKING_STATUS.STARTED
+                      : machine.working_status === WORKING_STATUS.STARTED
                       ? "Running"
                       : "Shut Down"}
                   </h3>
-                  <p>Capacity: {kiln.capacity} (Ton/h)</p>
+                  <p>Capacity: {machine.capacity} (Ton/h)</p>
                   <p>
-                    Last updated: {new Date(kiln.updatedAt).toLocaleString()}
+                    Last updated: {new Date(machine.updatedAt).toLocaleString()}
                   </p>
-                  <p>Production : {kiln.totalProduction}</p>
+                  <p>Production : {machine.totalProduction}</p>
                 </div>
-                <div className="mb-4">
-                  <Title level={5} className="mb-3">
+                <div className='mb-4'>
+                  <Title level={5} className='mb-3'>
                     Status Control
                   </Title>
                   <Row gutter={16}>
-                    {kiln.working_status !== WORKING_STATUS.STARTED && (
+                    {machine.working_status !== WORKING_STATUS.STARTED && (
                       <Col>
                         <Button
-                          className="running"
-                          type="primary"
+                          className='running'
+                          type='primary'
                           onClick={() => {
+                            setIsModalOpen(true);
                             handleStatusUpdate(
-                              kiln._id,
+                              machine._id,
                               WORKING_STATUS.STARTED,
                               index
                             );
@@ -362,14 +311,14 @@ const Machine = () => {
                       </Col>
                     )}
 
-                    {kiln.working_status === WORKING_STATUS.STARTED && (
+                    {machine.working_status === WORKING_STATUS.STARTED && (
                       <>
                         <Col>
                           <Button
-                            className="hold"
+                            className='hold'
                             onClick={() =>
                               handleStatusUpdate(
-                                kiln._id,
+                                machine._id,
                                 WORKING_STATUS.HOLD,
                                 index
                               )
@@ -381,11 +330,11 @@ const Machine = () => {
                         </Col>
                         <Col>
                           <Button
-                            className="shutdown"
+                            className='shutdown'
                             icon={<CloseCircleOutlined />}
                             onClick={() =>
                               handleStatusUpdate(
-                                kiln._id,
+                                machine._id,
                                 WORKING_STATUS.SHUT_DOWN,
                                 index
                               )
@@ -403,42 +352,38 @@ const Machine = () => {
           ))}
       </Row>
       <Modal
-        title={editingKiln ? "Edit Kiln" : "Add New Kiln"}
+        title={editMachineData ? "Edit Kiln" : "Add New Kiln"}
         open={isMachineModalOpen}
         onCancel={() => {
           SetIsMachineModalOpen(false);
-          setEditingKiln(null);
+          setEditMachineData(null);
           form.resetFields();
         }}
         footer={null}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={editingKiln ? handleEditKiln : handleAddKiln}
-        >
+        <Form form={form} layout='vertical' onFinish={handleAddEditMachine}>
           <Form.Item
-            name="name"
-            label="Kiln Name"
+            name='name'
+            label='Kiln Name'
             rules={[{ required: true, message: "Please enter kiln name" }]}
           >
-            <Input placeholder="Enter kiln name" />
+            <Input placeholder='Enter kiln name' />
           </Form.Item>
 
           <Form.Item
-            name="capacity"
-            label="Capacity (Ton/h)"
+            name='capacity'
+            label='Capacity (Ton/h)'
             rules={[{ required: true, message: "Please enter capacity" }]}
           >
-            <Input type="number" placeholder="Enter capacity" />
+            <Input type='number' placeholder='Enter capacity' />
           </Form.Item>
-          <Form.Item className="mb-0">
-            <Row gutter={16} justify="end">
+          <Form.Item className='mb-0'>
+            <Row gutter={16} justify='end'>
               <Col>
                 <Button
                   onClick={() => {
                     setIsModalOpen(false);
-                    setEditingKiln(null);
+                    setEditMachineData(null);
                     form.resetFields();
                   }}
                 >
@@ -446,8 +391,8 @@ const Machine = () => {
                 </Button>
               </Col>
               <Col>
-                <Button type="primary" htmlType="submit">
-                  {editingKiln ? "Save Changes" : "Add Kiln"}
+                <Button type='primary' htmlType='submit'>
+                  {editMachineData ? "Save Changes" : "Add Kiln"}
                 </Button>
               </Col>
             </Row>
@@ -456,13 +401,13 @@ const Machine = () => {
       </Modal>
 
       <Modal
-        title="Material List"
+        title='Material List'
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         footer={
           <Button
-            type="primary"
-            htmlType="submit"
+            type='primary'
+            htmlType='submit'
             icon={<PlusOutlined />}
             onClick={() => {
               setIsAddMaterialModalOpen(true);
@@ -474,9 +419,9 @@ const Machine = () => {
         }
       >
         <Table
-          dataSource={kilns[selectedMachineIndex]?.KilnMaterial?.map(
+          dataSource={machines[selectedMachineIndex]?.MachineMaterial?.map(
             (item, index) => ({
-              key: item._id,
+              id: item._id,
               name: item.material_id.name,
               quantity: item.quantity,
             })
@@ -496,33 +441,28 @@ const Machine = () => {
               title: "Actions",
               key: "actions",
               render: (records) => (
-                <Space size="middle">
+                <Space size='middle'>
                   <Button
-                    type="primary"
-                    size="small"
+                    size='small'
                     icon={<EditOutlined />}
                     onClick={() => {
                       handleEditMaterial(records);
                     }}
-                  >
-                    Edit
-                  </Button>
+                  />
                   <Button
-                    type="danger"
-                    size="small"
+                    danger
+                    size='small'
                     icon={<DeleteOutlined />}
                     onClick={() => {
                       Modal.confirm({
                         title: "Are you sure you want to delete this material?",
                         content: `Material: ${records.name}`,
                         onOk() {
-                          handleDeleteMaterial(records);
+                          handleSaveMaterial(records, true);
                         },
                       });
                     }}
-                  >
-                    Delete
-                  </Button>
+                  />
                 </Space>
               ),
             },
@@ -542,13 +482,17 @@ const Machine = () => {
         }}
         footer={null}
       >
-        <Form layout="vertical" form={form} onFinish={handleSaveMaterial}>
+        <Form
+          layout='vertical'
+          form={form}
+          onFinish={(data) => handleSaveMaterial(data, false)}
+        >
           <Form.Item
-            label="Select Material"
-            name="material_id"
+            label='Select Material'
+            name='material_id'
             rules={[{ required: true, message: "Please select a material" }]}
           >
-            <Select placeholder="Select a material" style={{ width: "100%" }}>
+            <Select placeholder='Select a material' style={{ width: "100%" }}>
               {materials.map((material) => (
                 <Option key={material.id} value={material.id}>
                   {material.name}
@@ -558,8 +502,8 @@ const Machine = () => {
           </Form.Item>
 
           <Form.Item
-            label="Quantity"
-            name="quantity"
+            label='Quantity'
+            name='quantity'
             rules={[
               { required: true, message: "Please enter a quantity" },
               {
@@ -575,8 +519,8 @@ const Machine = () => {
             ]}
           >
             <Input
-              type="number"
-              placeholder="Enter quantity"
+              type='number'
+              placeholder='Enter quantity'
               onChange={handleQuantityChange}
               max={100}
             />
@@ -591,13 +535,13 @@ const Machine = () => {
             >
               <Button
                 onClick={() => setIsAddMaterialModalOpen(false)}
-                className="btn btn-secondary"
+                className='btn btn-secondary'
               >
                 Cancel
               </Button>
               <Button
-                htmlType="submit"
-                type="primary"
+                htmlType='submit'
+                type='primary'
                 disabled={quantity > 100}
               >
                 {isEditMode ? "Update" : "Add"}
