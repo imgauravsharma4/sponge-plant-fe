@@ -21,10 +21,10 @@ import {
   EditOutlined,
   DeleteOutlined,
 } from "@ant-design/icons";
-import { FaEye } from "react-icons/fa";
 import { APIS } from "../../APIs/Apis";
 import { options } from "../../Config/options";
 import ToastMessage from "../../Component/ToastMessage/ToastMessage";
+import { AiOutlinePlus } from "react-icons/ai";
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -223,7 +223,7 @@ const Machine = () => {
                     </Col>
                     <Col span={16}>
                       <Space>
-                        <FaEye
+                        <AiOutlinePlus
                           onClick={() => {
                             setIsModalOpen(true);
                             setSelectedMachineIndex(index);
@@ -231,6 +231,7 @@ const Machine = () => {
                           }}
                           className='mouse-pointer'
                         />
+
                         <Button
                           type='text'
                           icon={<EditOutlined />}
@@ -254,7 +255,7 @@ const Machine = () => {
                   </Row>
                 }
               >
-                <div className='mb-4'>
+                <div>
                   <h3>
                     {machine.working_status === WORKING_STATUS.NOT_STARTED
                       ? "Not Started"
@@ -264,11 +265,24 @@ const Machine = () => {
                       ? "Running"
                       : "Shut Down"}
                   </h3>
-                  <p>Capacity: {machine.capacity} (Ton/h)</p>
                   <p>
-                    Last updated: {new Date(machine.updatedAt).toLocaleString()}
+                    Material Mix :
+                    {machine.MachineMaterial.length > 0
+                      ? machine.MachineMaterial.map((item, index) => (
+                          <span key={index} className='ms-1'>
+                            {item.material_id.name}({item.quantity}%)
+                            {index < machine.MachineMaterial.length - 1
+                              ? ", "
+                              : ""}
+                          </span>
+                        ))
+                      : "No Materials yet"}
                   </p>
-                  <p>Production : {machine.totalProduction}</p>
+
+                  <p>Capacity: {machine.capacity} (Ton/h)</p>
+                  <p>Feed Rate : {machine.feed_rate || 0} Ton/h</p>
+                  <p>Average Yeild : {machine.averageYield || 0}%</p>
+                  <p>Production : {machine.totalProduction || 0} Ton/h</p>
                 </div>
                 <div className='mb-4'>
                   <Title level={5} className='mb-3'>
@@ -336,6 +350,7 @@ const Machine = () => {
             </Col>
           ))}
       </Row>
+
       <Modal
         title={editMachineData ? "Edit Kiln" : "Add New Kiln"}
         open={isMachineModalOpen}
