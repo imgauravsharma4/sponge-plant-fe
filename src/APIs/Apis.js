@@ -1,8 +1,9 @@
 import { axios } from "./axios";
 
-const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
+const API_BASE_URL = 'https://sponge-plant-be.onrender.com';
 const API_V1 = "api/v1";
 const URL = `${API_BASE_URL}/${API_V1}`;
+
 
 const getAllMachine = () => {
   return axios.get(`${URL}/machine`);
