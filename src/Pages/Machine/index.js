@@ -61,7 +61,6 @@ const Machine = () => {
     const response = await APIS.getAllMaterial();
     setMaterials(response);
   };
-  console.log(">>>>>>>>>>>>>>>>>>>>>", currentMachineId)
 
   const handleAddEditMachine = async (values, isDelete) => {
     let payload={}
