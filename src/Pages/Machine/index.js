@@ -61,11 +61,13 @@ const Machine = () => {
     const response = await APIS.getAllMaterial();
     setMaterials(response);
   };
+  console.log(">>>>>>>>>>>>>>>>>>>>>", currentMachineId)
+
   const handleAddEditMachine = async (values, isDelete) => {
     let payload={}
     if (feedRate) {
       payload = {
-        id: '6753cbeffb0eb287e9d6c946',
+        id: currentMachineId,
         feed_rate: feedRate,
       };
       setFeedRateEdit(false)
