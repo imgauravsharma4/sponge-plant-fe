@@ -451,9 +451,7 @@ const Machine = () => {
                 type="number"
                 onChange={(e) => setFeedRate(e.target.value)}
               />
-            ) : (
-              "FeedRate"
-            )}
+            ) : <>{machines?.map((item)=>item?.feed_rate)}</>}
           </Col>
           <Col>
             {feedRateEdit ? (
