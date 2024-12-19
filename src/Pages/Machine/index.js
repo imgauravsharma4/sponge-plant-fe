@@ -51,6 +51,7 @@ const Machine = () => {
   const [quantity, setQuantity] = useState(0);
   const [feedRate,setFeedRate]=useState(0)
   const [feedRateEdit,setFeedRateEdit]=useState(false)
+  const [machineFeedRate, setMachineFeedRate]=useState()
   const [form] = Form.useForm();
 
   const fetchMachines = async () => {
@@ -69,6 +70,7 @@ const Machine = () => {
         id: currentMachineId,
         feed_rate: feedRate,
       };
+
       setFeedRateEdit(false)
     } else {
       payload = {
@@ -93,7 +95,6 @@ const Machine = () => {
         SetIsMachineModalOpen(false);
         setFeedRateEdit(false)
         setEditMachineData(null);
-
         form.resetFields();
       })
       .catch((error) => {
@@ -200,6 +201,10 @@ const Machine = () => {
   const handleFeedEdit=()=>{
     setFeedRateEdit(true)
   }
+  
+  const FeeRateData=(data)=>{
+    setMachineFeedRate(data?.feed_rate)
+  }
 
   useEffect(() => {
     fetchMachines();
@@ -248,6 +253,7 @@ const Machine = () => {
                             setIsModalOpen(true);
                             setSelectedMachineIndex(index);
                             setCurrentMachineId(machine._id);
+                            FeeRateData(machine)
                           }}
                           className="mouse-pointer"
                         />
@@ -319,7 +325,8 @@ const Machine = () => {
                             handleStatusUpdate(
                               machine._id,
                               WORKING_STATUS.STARTED,
-                              index
+                              index,
+
                             );
                             setSelectedMachineIndex(index);
                           }}
@@ -442,16 +449,18 @@ const Machine = () => {
           </Button>
         }
       >
-        <Row justify="space-between" align="middle">
+        <Row gutter={[18, 18]}  align="middle">
           <Col>
+          Feed Rate :
             {feedRateEdit ? (
               <Input
                 placeholder="Feed Rate"
                 allowClear
                 type="number"
                 onChange={(e) => setFeedRate(e.target.value)}
+                style={{ width: '120px', marginLeft:'40px' }}
               />
-            ) : <>{machines?.map((item)=>item?.feed_rate)}</>}
+            ) : <span style={{ marginLeft: '40px' }}>{machineFeedRate}</span>}
           </Col>
           <Col>
             {feedRateEdit ? (
