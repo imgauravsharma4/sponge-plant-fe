@@ -24,7 +24,7 @@ import {
 import { APIS } from "../../APIs/Apis";
 import { options } from "../../Config/options";
 import ToastMessage from "../../Component/ToastMessage/ToastMessage";
-import { AiOutlinePlus } from "react-icons/ai";
+import { AiOutlinePlus, AiOutlineSave } from "react-icons/ai";
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -49,9 +49,9 @@ const Machine = () => {
   const [selectedMachineIndex, setSelectedMachineIndex] = useState(null);
   const [reload, setReload] = useState(false);
   const [quantity, setQuantity] = useState(0);
-  const [feedRate,setFeedRate]=useState(0)
-  const [feedRateEdit,setFeedRateEdit]=useState(false)
-  const [machineFeedRate, setMachineFeedRate]=useState()
+  const [feedRate, setFeedRate] = useState(0);
+  const [feedRateEdit, setFeedRateEdit] = useState(false);
+  const [machineFeedRate, setMachineFeedRate] = useState();
   const [form] = Form.useForm();
 
   const fetchMachines = async () => {
@@ -64,14 +64,14 @@ const Machine = () => {
   };
 
   const handleAddEditMachine = async (values, isDelete) => {
-    let payload={}
+    let payload = {};
     if (feedRate) {
       payload = {
         id: currentMachineId,
         feed_rate: feedRate,
       };
 
-      setFeedRateEdit(false)
+      setFeedRateEdit(false);
     } else {
       payload = {
         ...values,
@@ -84,17 +84,17 @@ const Machine = () => {
           status: defaultStatus.INACTIVE,
         }),
       };
-    };
+    }
     APIS.addAndEditMachine(payload)
       .then((res) => {
         ToastMessage(
           messageStatus.SUCCESS,
           successMessage.UPDATE_SUCCESS_MESSAGE("Machine")
         );
-        setMachineFeedRate(feedRate)
+        setMachineFeedRate(feedRate);
         setReload(!reload);
         SetIsMachineModalOpen(false);
-        setFeedRateEdit(false)
+        setFeedRateEdit(false);
         setEditMachineData(null);
         form.resetFields();
       })
@@ -152,7 +152,6 @@ const Machine = () => {
   };
 
   const handleSaveMaterial = async (values, isDelete) => {
-    
     const payload = {
       ...values,
       machine_id: currentMachineId,
@@ -164,8 +163,6 @@ const Machine = () => {
       ...(isDelete && {
         status: defaultStatus.INACTIVE,
       }),
-
-
     };
     APIS.postMachineMaterial(payload)
       .then((res) => {
@@ -198,13 +195,13 @@ const Machine = () => {
     setQuantity(inputQuantity);
   };
 
-  const handleFeedEdit=()=>{
-    setFeedRateEdit(true)
-  }
-  
-  const FeeRateData=(data)=>{
-    setMachineFeedRate(data?.feed_rate)
-  }
+  const handleFeedEdit = () => {
+    setFeedRateEdit(true);
+  };
+
+  const FeeRateData = (data) => {
+    setMachineFeedRate(data?.feed_rate);
+  };
 
   useEffect(() => {
     fetchMachines();
@@ -215,13 +212,13 @@ const Machine = () => {
   }, []);
 
   return (
-    <div className="relative">
+    <div className='relative'>
       <div style={{ marginBottom: "50px" }}>
-        <Title level={4} className="m-0">
+        <Title level={4} className='m-0'>
           Kiln Operations
         </Title>
         <Button
-          type="primary"
+          type='primary'
           icon={<PlusOutlined />}
           onClick={() => {
             setEditMachineData(null);
@@ -253,25 +250,25 @@ const Machine = () => {
                             setIsModalOpen(true);
                             setSelectedMachineIndex(index);
                             setCurrentMachineId(machine._id);
-                            FeeRateData(machine)
+                            FeeRateData(machine);
                           }}
-                          className="mouse-pointer"
+                          className='mouse-pointer'
                         />
 
                         <Button
-                          type="text"
+                          type='text'
                           icon={<EditOutlined />}
                           onClick={() => showEditModal(machine)}
                         />
                         <Popconfirm
-                          title="Delete Kiln"
-                          description="Are you sure you want to delete this kiln?"
+                          title='Delete Kiln'
+                          description='Are you sure you want to delete this kiln?'
                           onConfirm={() => handleAddEditMachine(machine, true)}
-                          okText="Yes"
-                          cancelText="No"
+                          okText='Yes'
+                          cancelText='No'
                         >
                           <Button
-                            type="text"
+                            type='text'
                             danger
                             icon={<DeleteOutlined />}
                           />
@@ -295,7 +292,7 @@ const Machine = () => {
                     Material Mix :
                     {machine.MachineMaterial.length > 0
                       ? machine.MachineMaterial.map((item, index) => (
-                          <span key={index} className="ms-1">
+                          <span key={index} className='ms-1'>
                             {item.material_id.name}({item.quantity}%)
                             {index < machine.MachineMaterial.length - 1
                               ? ", "
@@ -310,23 +307,22 @@ const Machine = () => {
                   <p>Average Yeild : {machine.averageYield || 0}%</p>
                   <p>Production : {machine.totalProduction || 0} Ton/h</p>
                 </div>
-                <div className="mb-4">
-                  <Title level={5} className="mb-3">
+                <div className='mb-4'>
+                  <Title level={5} className='mb-3'>
                     Status Control
                   </Title>
                   <Row gutter={16}>
                     {machine.working_status !== WORKING_STATUS.STARTED && (
                       <Col>
                         <Button
-                          className="running"
-                          type="primary"
+                          className='running'
+                          type='primary'
                           onClick={() => {
                             setIsModalOpen(true);
                             handleStatusUpdate(
                               machine._id,
                               WORKING_STATUS.STARTED,
-                              index,
-
+                              index
                             );
                             setSelectedMachineIndex(index);
                           }}
@@ -341,7 +337,7 @@ const Machine = () => {
                       <>
                         <Col>
                           <Button
-                            className="hold"
+                            className='hold'
                             onClick={() =>
                               handleStatusUpdate(
                                 machine._id,
@@ -356,7 +352,7 @@ const Machine = () => {
                         </Col>
                         <Col>
                           <Button
-                            className="shutdown"
+                            className='shutdown'
                             icon={<CloseCircleOutlined />}
                             onClick={() =>
                               handleStatusUpdate(
@@ -390,26 +386,26 @@ const Machine = () => {
       >
         <Form
           form={form}
-          layout="vertical"
+          layout='vertical'
           onFinish={(data) => handleAddEditMachine(data, false)}
         >
           <Form.Item
-            name="name"
-            label="Kiln Name"
+            name='name'
+            label='Kiln Name'
             rules={[{ required: true, message: "Please enter kiln name" }]}
           >
-            <Input placeholder="Enter kiln name" />
+            <Input placeholder='Enter kiln name' />
           </Form.Item>
 
           <Form.Item
-            name="capacity"
-            label="Capacity (Ton/h)"
+            name='capacity'
+            label='Capacity (Ton/h)'
             rules={[{ required: true, message: "Please enter capacity" }]}
           >
-            <Input type="number" placeholder="Enter capacity" />
+            <Input type='number' placeholder='Enter capacity' />
           </Form.Item>
-          <Form.Item className="mb-0">
-            <Row gutter={16} justify="end">
+          <Form.Item className='mb-0'>
+            <Row gutter={16} justify='end'>
               <Col>
                 <Button
                   onClick={() => {
@@ -422,7 +418,7 @@ const Machine = () => {
                 </Button>
               </Col>
               <Col>
-                <Button type="primary" htmlType="submit">
+                <Button type='primary' htmlType='submit'>
                   {editMachineData ? "Save Changes" : "Add Kiln"}
                 </Button>
               </Col>
@@ -432,13 +428,13 @@ const Machine = () => {
       </Modal>
 
       <Modal
-        title="Material List"
+        title='Material List'
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         footer={
           <Button
-            type="primary"
-            htmlType="submit"
+            type='primary'
+            htmlType='submit'
             icon={<PlusOutlined />}
             onClick={() => {
               setIsAddMaterialModalOpen(true);
@@ -449,26 +445,32 @@ const Machine = () => {
           </Button>
         }
       >
-        <Row gutter={[18, 18]}  align="middle">
+        <Row gutter={[18, 18]} align='middle'>
           <Col>
-          Feed Rate :
+            Feed Rate :
             {feedRateEdit ? (
               <Input
-                placeholder="Feed Rate"
+                placeholder='Feed Rate'
                 allowClear
-                type="number"
+                type='number'
                 onChange={(e) => setFeedRate(e.target.value)}
-                style={{ width: '120px', marginLeft:'40px' }}
+                style={{ width: "120px", marginLeft: "40px" }}
               />
-            ) : <span style={{ marginLeft: '40px' }}>{machineFeedRate}</span>}
+            ) : (
+              <span style={{ marginLeft: "40px" }}>{machineFeedRate}</span>
+            )}
           </Col>
           <Col>
             {feedRateEdit ? (
-              <Button         onClick={() => handleAddEditMachine(machines[selectedMachineIndex])}
->Save</Button>
+              <Button
+                onClick={() =>
+                  handleAddEditMachine(machines[selectedMachineIndex])
+                }
+                icon={<AiOutlineSave />}
+              />
             ) : (
               <Button
-                size="small"
+                size='small'
                 icon={<EditOutlined />}
                 onClick={handleFeedEdit}
               />
@@ -499,9 +501,9 @@ const Machine = () => {
               title: "Actions",
               key: "actions",
               render: (records) => (
-                <Space size="middle">
+                <Space size='middle'>
                   <Button
-                    size="small"
+                    size='small'
                     icon={<EditOutlined />}
                     onClick={() => {
                       handleEditMaterial(records);
@@ -509,7 +511,7 @@ const Machine = () => {
                   />
                   <Button
                     danger
-                    size="small"
+                    size='small'
                     icon={<DeleteOutlined />}
                     onClick={() => {
                       Modal.confirm({
@@ -541,16 +543,16 @@ const Machine = () => {
         footer={null}
       >
         <Form
-          layout="vertical"
+          layout='vertical'
           form={form}
           onFinish={(data) => handleSaveMaterial(data, false)}
         >
           <Form.Item
-            label="Select Material"
-            name="material_id"
+            label='Select Material'
+            name='material_id'
             rules={[{ required: true, message: "Please select a material" }]}
           >
-            <Select placeholder="Select a material" style={{ width: "100%" }}>
+            <Select placeholder='Select a material' style={{ width: "100%" }}>
               {materials.map((material) => (
                 <Option key={material.id} value={material.id}>
                   {material.name}
@@ -560,8 +562,8 @@ const Machine = () => {
           </Form.Item>
 
           <Form.Item
-            label="Quantity"
-            name="quantity"
+            label='Quantity'
+            name='quantity'
             rules={[
               { required: true, message: "Please enter a quantity" },
               {
@@ -577,8 +579,8 @@ const Machine = () => {
             ]}
           >
             <Input
-              type="number"
-              placeholder="Enter quantity"
+              type='number'
+              placeholder='Enter quantity'
               onChange={handleQuantityChange}
               max={100}
             />
@@ -593,13 +595,13 @@ const Machine = () => {
             >
               <Button
                 onClick={() => setIsAddMaterialModalOpen(false)}
-                className="btn btn-secondary"
+                className='btn btn-secondary'
               >
                 Cancel
               </Button>
               <Button
-                htmlType="submit"
-                type="primary"
+                htmlType='submit'
+                type='primary'
                 disabled={quantity > 100}
               >
                 {isEditMode ? "Update" : "Add"}
