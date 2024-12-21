@@ -72,6 +72,7 @@ const Machine = () => {
       };
 
       setFeedRateEdit(false)
+      setMachineFeedRate(feedRate)
     } else {
       payload = {
         ...values,
@@ -98,7 +99,6 @@ const Machine = () => {
         form.resetFields();
       })
       .catch((error) => {
-        console.error("Delete failed:", error);
         ToastMessage(messageStatus.ERROR, errorMessage.SERVER_ERROR);
         SetIsMachineModalOpen(false);
         form.resetFields();
@@ -202,9 +202,9 @@ const Machine = () => {
     setFeedRateEdit(true)
   }
   
-  const FeeRateData=(data)=>{
-    setMachineFeedRate(data?.feed_rate)
-  }
+  // const FeeRateData=(data)=>{
+  //   setMachineFeedRate(data?.feed_rate)
+  // }
 
   useEffect(() => {
     fetchMachines();
@@ -253,7 +253,7 @@ const Machine = () => {
                             setIsModalOpen(true);
                             setSelectedMachineIndex(index);
                             setCurrentMachineId(machine._id);
-                            FeeRateData(machine)
+                            // FeeRateData(machine)
                           }}
                           className="mouse-pointer"
                         />
@@ -464,7 +464,8 @@ const Machine = () => {
           </Col>
           <Col>
             {feedRateEdit ? (
-              <Button onClick={handleAddEditMachine}>Save</Button>
+              <Button         onClick={() => handleAddEditMachine(machines[selectedMachineIndex])}
+>Save</Button>
             ) : (
               <Button
                 size="small"
