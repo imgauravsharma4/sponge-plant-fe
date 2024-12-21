@@ -325,8 +325,7 @@ const Machine = () => {
                             handleStatusUpdate(
                               machine._id,
                               WORKING_STATUS.STARTED,
-                              index,
-
+                              index
                             );
                             setSelectedMachineIndex(index);
                           }}
@@ -449,23 +448,30 @@ const Machine = () => {
           </Button>
         }
       >
-        <Row gutter={[18, 18]}  align="middle">
+        <Row gutter={[18, 18]} align="middle">
           <Col>
-          Feed Rate :
+            Feed Rate :
             {feedRateEdit ? (
               <Input
                 placeholder="Feed Rate"
                 allowClear
                 type="number"
                 onChange={(e) => setFeedRate(e.target.value)}
-                style={{ width: '120px', marginLeft:'40px' }}
+                style={{ width: "120px", marginLeft: "40px" }}
               />
-            ) : <span style={{ marginLeft: '40px' }}>{machineFeedRate}</span>}
+            ) : (
+              <span style={{ marginLeft: "40px" }}>{machineFeedRate}</span>
+            )}
           </Col>
           <Col>
             {feedRateEdit ? (
-              <Button         onClick={() => handleAddEditMachine(machines[selectedMachineIndex])}
->Save</Button>
+              <Button
+                onClick={() =>
+                  handleAddEditMachine(machines[selectedMachineIndex])
+                }
+              >
+                Save
+              </Button>
             ) : (
               <Button
                 size="small"
