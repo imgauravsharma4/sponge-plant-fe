@@ -72,7 +72,6 @@ const Machine = () => {
       };
 
       setFeedRateEdit(false)
-      setMachineFeedRate(feedRate)
     } else {
       payload = {
         ...values,
@@ -92,6 +91,7 @@ const Machine = () => {
           messageStatus.SUCCESS,
           successMessage.UPDATE_SUCCESS_MESSAGE("Machine")
         );
+        setMachineFeedRate(feedRate)
         setReload(!reload);
         SetIsMachineModalOpen(false);
         setFeedRateEdit(false)
@@ -202,9 +202,9 @@ const Machine = () => {
     setFeedRateEdit(true)
   }
   
-  // const FeeRateData=(data)=>{
-  //   setMachineFeedRate(data?.feed_rate)
-  // }
+  const FeeRateData=(data)=>{
+    setMachineFeedRate(data?.feed_rate)
+  }
 
   useEffect(() => {
     fetchMachines();
@@ -253,7 +253,7 @@ const Machine = () => {
                             setIsModalOpen(true);
                             setSelectedMachineIndex(index);
                             setCurrentMachineId(machine._id);
-                            // FeeRateData(machine)
+                            FeeRateData(machine)
                           }}
                           className="mouse-pointer"
                         />
@@ -325,7 +325,8 @@ const Machine = () => {
                             handleStatusUpdate(
                               machine._id,
                               WORKING_STATUS.STARTED,
-                              index
+                              index,
+
                             );
                             setSelectedMachineIndex(index);
                           }}
@@ -448,30 +449,23 @@ const Machine = () => {
           </Button>
         }
       >
-        <Row gutter={[18, 18]} align="middle">
+        <Row gutter={[18, 18]}  align="middle">
           <Col>
-            Feed Rate :
+          Feed Rate :
             {feedRateEdit ? (
               <Input
                 placeholder="Feed Rate"
                 allowClear
                 type="number"
                 onChange={(e) => setFeedRate(e.target.value)}
-                style={{ width: "120px", marginLeft: "40px" }}
+                style={{ width: '120px', marginLeft:'40px' }}
               />
-            ) : (
-              <span style={{ marginLeft: "40px" }}>{machineFeedRate}</span>
-            )}
+            ) : <span style={{ marginLeft: '40px' }}>{machineFeedRate}</span>}
           </Col>
           <Col>
             {feedRateEdit ? (
-              <Button
-                onClick={() =>
-                  handleAddEditMachine(machines[selectedMachineIndex])
-                }
-              >
-                Save
-              </Button>
+              <Button         onClick={() => handleAddEditMachine(machines[selectedMachineIndex])}
+>Save</Button>
             ) : (
               <Button
                 size="small"
